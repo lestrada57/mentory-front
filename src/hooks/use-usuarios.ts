@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { usuariosAPI, Usuario } from "@/services/api";
+import { usuariosAPI, Usuario, SignupPayload } from "@/services/api";
 
 /**
  * Hook para obtener la lista de usuarios
@@ -19,6 +19,20 @@ export const useUsuario = (id: number | null) => {
     queryKey: ["usuario", id],
     queryFn: () => usuariosAPI.obtener(id!),
     enabled: !!id,
+  });
+};
+
+/**
+ * Hook para crear un nuevo usuario
+ */
+export const useCrearUsuario = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: SignupPayload) => usuariosAPI.crear(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+    },
   });
 };
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Edit2, Loader2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Edit2, Loader2, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,11 +21,13 @@ export function CursosManagement() {
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [formData, setFormData] = useState({
     nombre: "",
     descripcion: "",
     precio: "",
     estado: "ACTIVO",
+    imagen: "",
   });
 
   // Filtrar cursos según el rol
@@ -39,12 +41,34 @@ export function CursosManagement() {
         descripcion: curso.descripcion,
         precio: curso.precio.toString(),
         estado: curso.estado,
+        imagen: curso.imagen || "",
       });
+      setImagePreview(curso.imagen || "");
     } else {
       setEditingId(null);
-      setFormData({ nombre: "", descripcion: "", precio: "", estado: "ACTIVO" });
+      setFormData({ nombre: "", descripcion: "", precio: "", estado: "ACTIVO", imagen: "" });
+      setImagePreview("");
     }
     setOpenDialog(true);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Crear una URL local para preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const imageUrl = reader.result as string;
+        setImagePreview(imageUrl);
+        setFormData({ ...formData, imagen: imageUrl });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview("");
+    setFormData({ ...formData, imagen: "" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,6 +89,7 @@ export function CursosManagement() {
       precio: parseFloat(formData.precio),
       docenteId: parseInt(user?.id || "0"),
       estado: formData.estado,
+      ...(formData.imagen && { imagen: formData.imagen }),
     };
 
     if (editingId) {
@@ -144,7 +169,7 @@ export function CursosManagement() {
               Nuevo Curso
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? "Editar Curso" : "Crear Nuevo Curso"}</DialogTitle>
             </DialogHeader>
@@ -184,6 +209,62 @@ export function CursosManagement() {
                   onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
                   disabled={isCreating || isUpdating}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="imagen">Imagen del curso</Label>
+                <div className="flex flex-col gap-3 mt-2">
+                  {imagePreview ? (
+                    <div className="relative w-full h-48 bg-muted rounded-lg overflow-hidden">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleRemoveImage}
+                        disabled={isCreating || isUpdating}
+                        className="absolute top-2 right-2"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        Selecciona una imagen para el curso
+                      </p>
+                      <input
+                        id="imagen"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        disabled={isCreating || isUpdating}
+                        className="hidden"
+                      />
+                      <Label 
+                        htmlFor="imagen"
+                        className="mt-2 inline-block cursor-pointer"
+                      >
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            document.getElementById('imagen')?.click();
+                          }}
+                          disabled={isCreating || isUpdating}
+                        >
+                          Seleccionar imagen
+                        </Button>
+                      </Label>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -256,6 +337,7 @@ export function CursosManagement() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground border-b border-border/50">
+                  <th className="px-5 py-3 font-medium">Imagen</th>
                   <th className="px-5 py-3 font-medium">Nombre</th>
                   <th className="px-5 py-3 font-medium">Descripción</th>
                   <th className="px-5 py-3 font-medium">Precio</th>
@@ -266,6 +348,19 @@ export function CursosManagement() {
               <tbody>
                 {cursosFiltrados.map((curso) => (
                   <tr key={curso.id} className="border-t border-border/30 hover:bg-muted/50 transition-colors">
+                    <td className="px-5 py-3">
+                      {curso.imagen ? (
+                        <img 
+                          src={curso.imagen} 
+                          alt={curso.nombre}
+                          className="w-12 h-12 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
+                          <span className="text-xs text-muted-foreground">Sin img</span>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-5 py-3 font-medium text-foreground">{curso.nombre}</td>
                     <td className="px-5 py-3 text-muted-foreground max-w-xs truncate">
                       {curso.descripcion || "—"}

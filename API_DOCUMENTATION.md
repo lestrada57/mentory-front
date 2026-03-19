@@ -4,7 +4,8 @@ Esta documentación describe los endpoints disponibles en la API de Mentory para
 
 ## URL Base
 La URL base para todas las peticiones a la API es:
-`https://mentory-production.up.railway.app` (Entorno de Producción)
+`https://mentory-production.up.railway.app`
+
 
 ## Autenticación (Auth)
 
@@ -120,6 +121,75 @@ Mismo formato que Crear Sesión.
 
 ### Eliminar Sesión (`DELETE /api/cursos/{cursoId}/sesiones/{sesionId}`)
 Elimina una sesión de un curso.
+
+---
+
+## Gestión de Contenidos (Archivos de Curso)
+
+Permite subir y descargar material de clase. Utiliza almacenamiento en la nube (MinIO/S3).
+
+### Subir Contenido (`POST /api/contenidos/upload`)
+**Roles:** `ADMINISTRADOR`, `DOCENTE`
+**Tipo:** `multipart/form-data`
+
+**Parámetros (Form-Data):**
+*   `file`: (Archivo) El archivo a subir.
+*   `contenido`: (JSON) Objeto con los metadatos.
+
+**Ejemplo JSON para `contenido`:**
+```json
+{
+  "cursoId": 10,
+  "titulo": "Diapositivas Semana 1",
+  "descripcion": "Introducción a la programación",
+  "tipo": "PDF",
+  "estado": "PUBLICADO"
+}
+```
+
+### Descargar Contenido (`GET /api/contenidos/{id}/download`)
+**Roles:** `ADMINISTRADOR`, `DOCENTE`, `ESTUDIANTE` (solo si está inscrito)
+Devuelve una URL firmada para descargar el archivo.
+
+**Respuesta Exitosa (JSON):**
+```json
+{
+  "downloadUrl": "https://minio.example.com/mentory-files/..."
+}
+```
+
+---
+
+## Gestión de Entregas (Tareas)
+
+Permite a los estudiantes subir sus tareas.
+
+### Subir Entrega (`POST /api/entregas/upload`)
+**Roles:** `ESTUDIANTE`
+**Tipo:** `multipart/form-data`
+
+**Parámetros (Form-Data):**
+*   `file`: (Archivo) El archivo de la tarea.
+*   `entrega`: (JSON) Objeto con los metadatos.
+
+**Ejemplo JSON para `entrega`:**
+```json
+{
+  "tareaId": 5,
+  "estudianteId": 20
+}
+```
+
+### Descargar Entrega (`GET /api/entregas/{id}/download`)
+**Roles:** `ADMINISTRADOR`, `DOCENTE`, `ESTUDIANTE` (propietario)
+Devuelve una URL firmada para descargar el archivo.
+
+**Respuesta Exitosa (JSON):**
+```json
+{
+  "downloadUrl": "https://minio.example.com/mentory-files/..."
+}
+```
 
 ---
 

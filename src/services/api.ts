@@ -122,6 +122,31 @@ const apiPatch = async <T>(endpoint: string, data: unknown): Promise<T> => {
   return response.json();
 };
 
+/**
+ * Realiza una petición multipart/form-data (para uploads)
+ */
+const apiUpload = async <T>(endpoint: string, formData: FormData): Promise<T> => {
+  const token = getAuthToken();
+  const headers: HeadersInit = {};
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `API Error: ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
 // ============ TIPOS ============
 
 export interface LoginResponse {
@@ -148,6 +173,7 @@ export interface Curso {
   precio: number;
   docenteId: number;
   estado: string;
+  imagen?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -177,6 +203,26 @@ export interface Inscripcion {
   estado: string;
   fechaInscripcion?: string;
   monto?: number;
+}
+
+export interface Contenido {
+  id: number;
+  cursoId: number;
+  titulo: string;
+  descripcion?: string;
+  tipo: string;
+  estado: string;
+  archivoUrl?: string;
+  createdAt?: string;
+}
+
+export interface Entrega {
+  id: number;
+  tareaId: number;
+  estudianteId: number;
+  estado: string;
+  archivoUrl?: string;
+  fechaEntrega?: string;
 }
 
 // ============ AUTH ENDPOINTS ============
@@ -274,6 +320,12 @@ export const usuariosAPI = {
   obtener: (id: number) => apiGet<Usuario>(`/usuarios/${id}`),
 
   /**
+   * Crea un nuevo usuario (admin signup)
+   */
+  crear: (payload: SignupPayload) =>
+    apiPost<LoginResponse>("/auth/signup", payload),
+
+  /**
    * Actualiza un usuario
    */
   actualizar: (id: number, data: Partial<Usuario>) =>
@@ -352,4 +404,44 @@ export const permisosAPI = {
    * Elimina un permiso
    */
   eliminar: (id: number) => apiDelete(`/permisos/${id}`),
+};
+
+// ============ CONTENIDOS ENDPOINTS ============
+
+export const contenidosAPI = {
+  /**
+   * Sube un archivo de contenido
+   */
+  upload: (file: File, contenidoMeta: { cursoId: number; titulo: string; descripcion?: string; tipo: string; estado: string }) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("contenido", JSON.stringify(contenidoMeta));
+    return apiUpload<Contenido>("/contenidos/upload", formData);
+  },
+
+  /**
+   * Descarga un contenido
+   */
+  descargar: (id: number) =>
+    apiGet<{ downloadUrl: string }>(`/contenidos/${id}/download`),
+};
+
+// ============ ENTREGAS ENDPOINTS ============
+
+export const entregasAPI = {
+  /**
+   * Sube una entrega (tarea)
+   */
+  upload: (file: File, entregaMeta: { tareaId: number; estudianteId: number }) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("entrega", JSON.stringify(entregaMeta));
+    return apiUpload<Entrega>("/entregas/upload", formData);
+  },
+
+  /**
+   * Descarga una entrega
+   */
+  descargar: (id: number) =>
+    apiGet<{ downloadUrl: string }>(`/entregas/${id}/download`),
 };
