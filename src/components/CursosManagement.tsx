@@ -7,9 +7,35 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { useCursos, useCrearCurso, useActualizarCurso, useEliminarCurso } from "@/hooks/use-cursos";
+import { useCursos, useCrearCurso, useActualizarCurso, useEliminarCurso, useCursoImagen } from "@/hooks/use-cursos";
 import { useAuth } from "@/lib/auth-context";
 import { Curso } from "@/services/api";
+
+const CursoImagenView = ({ curso }: { curso: Curso }) => {
+  const { data: imageUrl, isLoading } = useCursoImagen(curso.imagenKey ? curso.id : undefined);
+
+  if (isLoading) {
+    return <div className="w-12 h-12 rounded bg-muted animate-pulse" />;
+  }
+
+  const src = imageUrl || curso.imagen;
+
+  if (src) {
+    return (
+      <img 
+        src={src} 
+        alt={curso.nombre}
+        className="w-12 h-12 rounded object-cover"
+      />
+    );
+  }
+
+  return (
+    <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
+      <span className="text-xs text-muted-foreground">Sin img</span>
+    </div>
+  );
+};
 
 export function CursosManagement() {
   const { user } = useAuth();
@@ -349,17 +375,7 @@ export function CursosManagement() {
                 {cursosFiltrados.map((curso) => (
                   <tr key={curso.id} className="border-t border-border/30 hover:bg-muted/50 transition-colors">
                     <td className="px-5 py-3">
-                      {curso.imagen ? (
-                        <img 
-                          src={curso.imagen} 
-                          alt={curso.nombre}
-                          className="w-12 h-12 rounded object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">Sin img</span>
-                        </div>
-                      )}
+                      <CursoImagenView curso={curso} />
                     </td>
                     <td className="px-5 py-3 font-medium text-foreground">{curso.nombre}</td>
                     <td className="px-5 py-3 text-muted-foreground max-w-xs truncate">

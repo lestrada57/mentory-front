@@ -174,6 +174,7 @@ export interface Curso {
   docenteId: number;
   estado: string;
   imagen?: string;
+  imagenKey?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -253,6 +254,11 @@ export const cursosAPI = {
    * Obtiene un curso por ID
    */
   obtener: (id: number) => apiGet<Curso>(`/cursos/${id}`),
+
+  /**
+   * Obtiene la URL de la imagen de un curso
+   */
+  obtenerImagen: (id: number) => apiGet<{ url: string }>(`/cursos/${id}/imagen`),
 
   /**
    * Crea un nuevo curso

@@ -23,6 +23,23 @@ export const useCurso = (id: number | null) => {
 };
 
 /**
+ * Hook para obtener la imagen de un curso
+ */
+export const useCursoImagen = (id: number | undefined) => {
+  return useQuery({
+    queryKey: ["curso-imagen", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const res = await cursosAPI.obtenerImagen(id);
+      return res.url;
+    },
+    enabled: !!id,
+    staleTime: 1000 * 60 * 60, // 1 hour
+    retry: false,
+  });
+};
+
+/**
  * Hook para crear un curso
  */
 export const useCrearCurso = () => {
